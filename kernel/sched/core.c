@@ -768,7 +768,9 @@ unsigned int sysctl_sched_uclamp_util_max = SCHED_CAPACITY_SCALE;
  * This knob will not override the system default sched_util_clamp_min defined
  * above.
  */
-unsigned int sysctl_sched_uclamp_util_min_rt_default = 0;
+
+unsigned int sysctl_sched_uclamp_util_min_rt_default = SCHED_CAPACITY_SCALE;
+
 
 /* All clamps are required to be less or equal than these values */
 static struct uclamp_se uclamp_default[UCLAMP_CNT];
@@ -872,7 +874,9 @@ unsigned int uclamp_rq_max_value(struct rq *rq, enum uclamp_id clamp_id,
 	return uclamp_idle_value(rq, clamp_id, clamp_value);
 }
 
-static void __uclamp_sync_util_min_rt_default_locked(struct task_struct *p)
+
+static void __uclamp_update_util_min_rt_default(struct task_struct *p)
+
 {
 	unsigned int default_util_min;
 	struct uclamp_se *uc_se;
@@ -889,7 +893,9 @@ static void __uclamp_sync_util_min_rt_default_locked(struct task_struct *p)
 	uclamp_se_set(uc_se, default_util_min, false);
 }
 
-static void __uclamp_sync_util_min_rt_default(struct task_struct *p)
+
+static void uclamp_update_util_min_rt_default(struct task_struct *p)
+
 {
 	struct rq_flags rf;
 	struct rq *rq;
@@ -899,7 +905,9 @@ static void __uclamp_sync_util_min_rt_default(struct task_struct *p)
 
 	/* Protect updates to p->uclamp_* */
 	rq = task_rq_lock(p, &rf);
-	__uclamp_sync_util_min_rt_default_locked(p);
+
+	__uclamp_update_util_min_rt_default(p);
+
 	task_rq_unlock(rq, p, &rf);
 }
 
@@ -926,7 +934,9 @@ static void uclamp_sync_util_min_rt_default(void)
 
 	rcu_read_lock();
 	for_each_process_thread(g, p)
-		__uclamp_sync_util_min_rt_default(p);
+
+		uclamp_update_util_min_rt_default(p);
+
 	rcu_read_unlock();
 }
 
@@ -1232,7 +1242,9 @@ int sysctl_sched_uclamp_handler(struct ctl_table *table, int write,
 		goto done;
 
 	if (sysctl_sched_uclamp_util_min > sysctl_sched_uclamp_util_max ||
-	    sysctl_sched_uclamp_util_max > SCHED_CAPACITY_SCALE ||
+
+	    sysctl_sched_uclamp_util_max > SCHED_CAPACITY_SCALE	||
+
 	    sysctl_sched_uclamp_util_min_rt_default > SCHED_CAPACITY_SCALE) {
 
 		result = -EINVAL;
@@ -1328,9 +1340,9 @@ static void __setscheduler_uclamp(struct task_struct *p,
 		 */
 		if (sched_feat(SUGOV_RT_MAX_FREQ) &&
 			       unlikely(rt_task(p) &&
-			       clamp_id == UCLAMP_MIN))
 
-			__uclamp_sync_util_min_rt_default_locked(p);
+			       clamp_id == UCLAMP_MIN)) 
+				__uclamp_update_util_min_rt_default(p);
 		else
 			uclamp_se_set(uc_se, uclamp_none(clamp_id), false);
 
@@ -1368,6 +1380,11 @@ static void uclamp_fork(struct task_struct *p)
 		uclamp_se_set(&p->uclamp_req[clamp_id],
 			      uclamp_none(clamp_id), false);
 	}
+}
+
+static void uclamp_post_fork(struct task_struct *p)
+{
+	uclamp_update_util_min_rt_default(p);
 }
 
 #ifdef CONFIG_SMP
