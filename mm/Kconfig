@@ -890,21 +890,9 @@ config HAVE_USERSPACE_LOW_MEMORY_KILLER
 	  Therefore, add a timeout mechanism to give the userspace
 	  low memory killer a chance to run.
 
-config GUP_BENCHMARK
-	bool "Enable infrastructure for get_user_pages_fast() benchmarking"
-	default n
-	help
-	  Provides /sys/kernel/debug/gup_benchmark that helps with testing
-	  performance of get_user_pages_fast().
-
-	  See tools/testing/selftests/vm/gup_benchmark.c
-
-config ARCH_HAS_PTE_SPECIAL
-	bool
-
-config LARGE_DIRTY_BUFFER
-	bool "Use large dirty_threshold value by enabling dirty_ratio"
-	default n
+config FORCE_ALLOC_FROM_DMA_ZONE
+	bool "Force certain memory allocators to always return ZONE_DMA memory"
+	depends on ZONE_DMA
 	help
 	  This config enables dirty_ratio/dirty_background_ratio,
 	  and it means large dirty_threshold value in 64bit architectures.
