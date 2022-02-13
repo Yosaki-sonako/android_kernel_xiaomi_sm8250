@@ -1490,6 +1490,12 @@ struct hdd_adapter {
 	qdf_work_t netdev_features_update_work;
 	qdf_atomic_t gro_disallowed;
 	uint8_t gro_flushed[DP_MAX_RX_THREADS];
+<<<<<<< HEAD
+=======
+#if IS_ENABLED(CONFIG_BOARD_ELISH) || IS_ENABLED(CONFIG_BOARD_ENUMA) || IS_ENABLED(CONFIG_BOARD_DAGU)
+	qdf_event_t install_key_complete;
+#endif
+>>>>>>> 706c1f56d70e (qcacld-3.0: Conditional wlan modifications for K81/K81A/L81A)
 	bool delete_in_progress;
 	qdf_atomic_t net_dev_hold_ref_count[NET_DEV_HOLD_ID_MAX];
 #ifdef CFG_SUPPORT_SCAN_EXT_FLAG
@@ -4786,5 +4792,27 @@ void hdd_netdev_update_features(struct hdd_adapter *adapter);
  * Return: 0 for success; non-zero for failure
  */
 int hdd_stop_no_trans(struct net_device *dev);
+
+#if IS_ENABLED(CONFIG_BOARD_ELISH) || IS_ENABLED(CONFIG_BOARD_ENUMA) || IS_ENABLED(CONFIG_BOARD_DAGU)
+/**
+ * hdd_start_install_key - indicate install key start
+ * @adapter: Adapter upon which the command was received
+ *
+ * This func indicates install key start.
+ *
+ * Return: None
+ */
+void hdd_start_install_key(struct hdd_adapter *adapter);
+
+/**
+ * hdd_wait_for_install_key_complete - wait for result of install key
+ * @adapter: Adapter upon which the command was received
+ *
+ * This func waits until install key complete/timeout.
+ *
+ * Return: 0 on success and errno on failure
+ */
+int hdd_wait_for_install_key_complete(struct hdd_adapter *adapter);
+#endif /* end #if IS_ENABLED(CONFIG_BOARD_ELISH) || IS_ENABLED(CONFIG_BOARD_ENUMA) || IS_ENABLED(CONFIG_BOARD_DAGU) */
 
 #endif /* end #if !defined(WLAN_HDD_MAIN_H) */
