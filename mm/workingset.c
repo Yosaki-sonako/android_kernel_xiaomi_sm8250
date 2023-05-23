@@ -293,7 +293,7 @@ void lru_gen_refault(struct page *page, void *shadow)
 	hist = lru_hist_from_seq(min_seq);
 	tier = lru_tier_from_refs(refs + workingset);
 	atomic_long_add(delta, &lrugen->refaulted[hist][type][tier]);
-	mod_lruvec_state(lruvec, WORKINGSET_REFAULT, delta);
+	mod_lruvec_state(lruvec, WORKINGSET_ACTIVATE, delta);
 
 	/*
 	 * Count the following two cases as stalls:
