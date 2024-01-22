@@ -5629,7 +5629,6 @@ enqueue_task_fair(struct rq *rq, struct task_struct *p, int flags)
 	bool prefer_idle = sched_feat(EAS_PREFER_IDLE) ?
 				(schedtune_prefer_idle(p) > 0) : 0;
 
-	int task_new = !(flags & ENQUEUE_WAKEUP);
 
 	/*
 	 * The code below (indirectly) updates schedutil which looks at
@@ -5723,8 +5722,7 @@ enqueue_task_fair(struct rq *rq, struct task_struct *p, int flags)
 		 * normal before next overutilized check.
 		 */
 
-		if (!task_new &&
-		    !(prefer_idle && rq->nr_running == 1))
+		if ((flags & ENQUEUE_WAKEUP) && !(prefer_idle && rq->nr_running == 1))
 
 			update_overutilized_status(rq);
 	}
