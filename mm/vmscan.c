@@ -1256,6 +1256,11 @@ static unsigned long shrink_page_list(struct list_head *page_list,
 		    (writeback && PageReclaim(page)))
 			nr_congested++;
 
+		/* page_update_gen() tried to promote this page? */
+		if (lru_gen_enabled() && !skip_reference_check &&
+		    page_mapped(page) && PageReferenced(page))
+			goto keep_locked;
+
 		/*
 		 * If a page at the tail of the LRU is under writeback, there
 		 * are three cases to consider.
