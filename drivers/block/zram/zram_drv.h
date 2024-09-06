@@ -76,7 +76,7 @@ struct zram_table_entry {
 		struct zram_entry *entry;
 		unsigned long element;
 	};
-	unsigned long flags;
+	unsigned int flags;
 	spinlock_t lock;
 	ktime_t ac_time;
 };
