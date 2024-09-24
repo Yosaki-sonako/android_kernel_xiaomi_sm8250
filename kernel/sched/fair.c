@@ -10608,6 +10608,7 @@ static struct rq *find_busiest_queue(struct lb_env *env,
 
 static int need_active_balance(struct lb_env *env)
 {
+<<<<<<< HEAD
 	struct sched_domain *sd = env->sd;
 
 	if (env->idle == CPU_NEWLY_IDLE) {
@@ -10624,6 +10625,15 @@ static int need_active_balance(struct lb_env *env)
 
 	if (env->idle != CPU_NOT_IDLE &&
 			env->src_grp_type == group_misfit_task)
+=======
+	if (asym_active_balance(env))
+		return 1;
+
+	if (imbalanced_active_balance(env))
+		return 1;
+
+	if (env->migration_type == migrate_misfit)
+>>>>>>> bd31eadb5ad9 (sched/fair: Don't needlessly migrate a lone task to a higher capacity CPU)
 		return 1;
 
 	if ((env->idle != CPU_NOT_IDLE) &&
@@ -11521,19 +11531,6 @@ static void nohz_balancer_kick(struct rq *rq)
 	}
 
 	rcu_read_lock();
-	sds = rcu_dereference(per_cpu(sd_llc_shared, cpu));
-	if (sds) {
-		/*
-		 * XXX: write a coherent comment on why we do this.
-		 * See also: http://lkml.kernel.org/r/20111202010832.602203411@sbsiddha-desk.sc.intel.com
-		 */
-		nr_busy = atomic_read(&sds->nr_busy_cpus);
-		if (nr_busy > 1) {
-			flags = NOHZ_KICK_MASK;
-			goto unlock;
-		}
-
-	}
 
 	sd = rcu_dereference(per_cpu(sd_asym_packing, cpu));
 	if (sd) {
