@@ -11673,7 +11673,6 @@ static bool _nohz_idle_balance(struct rq *this_rq, unsigned int flags,
 	unsigned long next_balance = now + 60*HZ;
 	bool has_blocked_load = false;
 	int update_next_balance = 0;
-	int this_cpu = this_rq->cpu;
 	int balance_cpu;
 	int ret = false;
 	struct rq *rq;
@@ -11697,10 +11696,12 @@ static bool _nohz_idle_balance(struct rq *this_rq, unsigned int flags,
 	 */
 	smp_mb();
 
+
 	cpumask_andnot(&cpus, nohz.idle_cpus_mask, cpu_isolated_mask);
 
 	for_each_cpu(balance_cpu, &cpus) {
 		if (balance_cpu == this_cpu || !idle_cpu(balance_cpu))
+
 			continue;
 
 		/*
