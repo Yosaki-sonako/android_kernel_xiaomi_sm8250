@@ -1732,7 +1732,15 @@ thermal_sconfig_store(struct device *dev,
 
 	val = simple_strtol(buf, NULL, 10);
 
-	atomic_set(&switch_mode, 10);
+
+	if (ret)
+		return ret;
+
+	// Check if the value is -1 or 0, if so set to 10, else use the provided value
+	if (val == -1 || val == 0)
+		atomic_set(&switch_mode, 10);
+	else
+		atomic_set(&switch_mode, val);
 
 	return len;
 }
