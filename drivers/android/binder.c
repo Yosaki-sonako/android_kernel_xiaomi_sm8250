@@ -69,6 +69,9 @@
 #include <asm/cacheflush.h>
 #include "binder_internal.h"
 #include "binder_trace.h"
+#ifdef CONFIG_REKERNEL
+#include <../rekernel/rekernel.h>
+#endif /* CONFIG_REKERNEL */
 static HLIST_HEAD(binder_deferred_list);
 static DEFINE_MUTEX(binder_deferred_lock);
 static HLIST_HEAD(binder_devices);
@@ -2626,10 +2629,16 @@ static int binder_proc_transaction(struct binder_transaction *t,
 				binder_debug(BINDER_DEBUG_TRANSACTION,
 					     "txn %d supersedes %d\n",
 					     t->debug_id, t_outdated->debug_id);
+#ifdef CONFIG_REKERNEL
+		if (frozen_task_group(proc->tsk)) {
+			t_outdated = binder_find_outdated_transaction_ilocked(t,
+											&node->async_todo);
+			if (t_outdated) {
 				list_del_init(&t_outdated->work.entry);
 				proc->outstanding_txns--;
 			}
 		}
+#endif /* CONFIG_REKERNEL */
 		binder_enqueue_work_ilocked(&t->work, &node->async_todo);
 	}
 	if (!pending_async)
@@ -2638,6 +2647,7 @@ static int binder_proc_transaction(struct binder_transaction *t,
 	binder_inner_proc_unlock(proc);
 	binder_node_unlock(node);
 
+#ifdef CONFIG_REKERNEL
 	/*
 	 * To reduce potential contention, free the outdated transaction and
 	 * buffer after releasing the locks.
@@ -2649,6 +2659,7 @@ static int binder_proc_transaction(struct binder_transaction *t,
 		buffer->transaction = NULL;
 		trace_binder_transaction_update_buffer_release(buffer);
 		binder_release_entire_buffer(proc, NULL, buffer, false);
+		binder_transaction_buffer_release(proc, buffer, 0, false);
 		binder_alloc_free_buf(&proc->alloc, buffer);
 		kfree(t_outdated);
 		binder_stats_deleted(BINDER_STAT_TRANSACTION);
@@ -2656,6 +2667,7 @@ static int binder_proc_transaction(struct binder_transaction *t,
 
 	if (oneway && frozen)
 		return BR_TRANSACTION_PENDING_FROZEN;
+#endif /* CONFIG_REKERNEL */
 
 	return 0;
 }
