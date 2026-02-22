@@ -2624,21 +2624,23 @@ static int binder_proc_transaction(struct binder_transaction *t,
 	} else {
 		if ((t->flags & TF_UPDATE_TXN) && frozen) {
 			t_outdated = binder_find_outdated_transaction_ilocked(t,
-									      &node->async_todo);
+								      &node->async_todo);
 			if (t_outdated) {
 				binder_debug(BINDER_DEBUG_TRANSACTION,
 					     "txn %d supersedes %d\n",
 					     t->debug_id, t_outdated->debug_id);
-#ifdef CONFIG_REKERNEL
-		if (frozen_task_group(proc->tsk)) {
-			t_outdated = binder_find_outdated_transaction_ilocked(t,
-											&node->async_todo);
-			if (t_outdated) {
-				list_del_init(&t_outdated->work.entry);
-				proc->outstanding_txns--;
 			}
-		}
+#ifdef CONFIG_REKERNEL
+			if (frozen_task_group(proc->tsk)) {
+				t_outdated = binder_find_outdated_transaction_ilocked(t,
+										      &node->async_todo);
+				if (t_outdated) {
+					list_del_init(&t_outdated->work.entry);
+					proc->outstanding_txns--;
+				}
+			}
 #endif /* CONFIG_REKERNEL */
+		}
 		binder_enqueue_work_ilocked(&t->work, &node->async_todo);
 	}
 	if (!pending_async)
@@ -5395,7 +5397,7 @@ static void binder_vma_close(struct vm_area_struct *vma)
 		     (unsigned long)pgprot_val(vma->vm_page_prot));
 	binder_alloc_vma_close(&proc->alloc);
 }
-static int binder_vm_fault(struct vm_fault *vmf)
+static vm_fault_t binder_vm_fault(struct vm_fault *vmf)
 {
 	return VM_FAULT_SIGBUS;
 }
