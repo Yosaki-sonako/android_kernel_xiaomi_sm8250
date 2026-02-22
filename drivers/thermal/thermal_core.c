@@ -1732,7 +1732,7 @@ thermal_sconfig_store(struct device *dev,
 
 	val = simple_strtol(buf, NULL, 10);
 
-	atomic_set(&switch_mode, 10);
+	atomic_set(&switch_mode, val);
 
 	return len;
 }
