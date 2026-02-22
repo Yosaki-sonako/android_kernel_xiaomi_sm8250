@@ -2586,6 +2586,9 @@ static int binder_proc_transaction(struct binder_transaction *t,
 				binder_debug(BINDER_DEBUG_TRANSACTION,
 					     "txn %d supersedes %d\n",
 					     t->debug_id, t_outdated->debug_id);
+				list_del_init(&t_outdated->work.entry);
+				proc->outstanding_txns--;
+			}
 		}
 		binder_enqueue_work_ilocked(&t->work, &node->async_todo);
 	}
