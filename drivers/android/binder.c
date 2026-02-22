@@ -2540,9 +2540,7 @@ static int binder_proc_transaction(struct binder_transaction *t,
 	bool oneway = !!(t->flags & TF_ONE_WAY);
 	bool pending_async = false;
 	bool skip = false;
-#ifdef CONFIG_REKERNEL
 	struct binder_transaction *t_outdated = NULL;
-#endif /* CONFIG_REKERNEL */
 	bool frozen = false;
 
 	BUG_ON(!node);
@@ -2618,9 +2616,10 @@ static int binder_proc_transaction(struct binder_transaction *t,
 		kfree(t_outdated);
 		binder_stats_deleted(BINDER_STAT_TRANSACTION);
 	}
-#endif /* CONFIG_REKERNEL */
+
 	if (oneway && frozen)
 		return BR_TRANSACTION_PENDING_FROZEN;
+#endif /* CONFIG_REKERNEL */
 
 	return 0;
 }
