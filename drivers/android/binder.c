@@ -2586,15 +2586,6 @@ static int binder_proc_transaction(struct binder_transaction *t,
 				binder_debug(BINDER_DEBUG_TRANSACTION,
 					     "txn %d supersedes %d\n",
 					     t->debug_id, t_outdated->debug_id);
-			}
-			if (frozen_task_group(proc->tsk)) {
-				t_outdated = binder_find_outdated_transaction_ilocked(t,
-										      &node->async_todo);
-				if (t_outdated) {
-					list_del_init(&t_outdated->work.entry);
-					proc->outstanding_txns--;
-				}
-			}
 		}
 		binder_enqueue_work_ilocked(&t->work, &node->async_todo);
 	}
@@ -2604,22 +2595,6 @@ static int binder_proc_transaction(struct binder_transaction *t,
 	binder_inner_proc_unlock(proc);
 	binder_node_unlock(node);
 
-	/*
-	 * To reduce potential contention, free the outdated transaction and
-	 * buffer after releasing the locks.
-	 */
-	if (t_outdated) {
-		struct binder_buffer *buffer = t_outdated->buffer;
-
-		t_outdated->buffer = NULL;
-		buffer->transaction = NULL;
-		trace_binder_transaction_update_buffer_release(buffer);
-		binder_release_entire_buffer(proc, NULL, buffer, false);
-		binder_transaction_buffer_release(proc, buffer, 0, false);
-		binder_alloc_free_buf(&proc->alloc, buffer);
-		kfree(t_outdated);
-		binder_stats_deleted(BINDER_STAT_TRANSACTION);
-	}
 
 	if (oneway && frozen)
 		return BR_TRANSACTION_PENDING_FROZEN;
