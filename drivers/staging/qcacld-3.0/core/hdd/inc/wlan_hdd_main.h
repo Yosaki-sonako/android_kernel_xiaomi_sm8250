@@ -1490,12 +1490,11 @@ struct hdd_adapter {
 	qdf_work_t netdev_features_update_work;
 	qdf_atomic_t gro_disallowed;
 	uint8_t gro_flushed[DP_MAX_RX_THREADS];
-<<<<<<< HEAD
-=======
+
 #if IS_ENABLED(CONFIG_BOARD_ELISH) || IS_ENABLED(CONFIG_BOARD_ENUMA) || IS_ENABLED(CONFIG_BOARD_DAGU)
 	qdf_event_t install_key_complete;
 #endif
->>>>>>> 706c1f56d70e (qcacld-3.0: Conditional wlan modifications for K81/K81A/L81A)
+
 	bool delete_in_progress;
 	qdf_atomic_t net_dev_hold_ref_count[NET_DEV_HOLD_ID_MAX];
 #ifdef CFG_SUPPORT_SCAN_EXT_FLAG
