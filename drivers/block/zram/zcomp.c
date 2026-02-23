@@ -68,7 +68,7 @@ static int zcomp_strm_init(struct zcomp *comp, struct zcomp_strm *zstrm)
 		zcomp_strm_free(comp, zstrm);
 		return -ENOMEM;
 	}
-	return zstrm;
+	return 0;
 }
 
 static const struct zcomp_ops *lookup_backend_ops(const char *comp)
@@ -174,11 +174,11 @@ int zcomp_cpu_up_prepare(unsigned int cpu, struct hlist_node *node)
 	int ret;
 
 	ret = zcomp_strm_init(comp, zstrm);
-	if (ret)
+	if (ret) {
 		pr_err("Can't allocate a compression stream\n");
 		return -ENOMEM;
 	}
-	*per_cpu_ptr(comp->stream, cpu) = zstrm;
+
 	return 0;
 }
 
@@ -197,7 +197,7 @@ static int zcomp_init(struct zcomp *comp, struct zcomp_params *params)
 {
 	int ret, cpu;
 
-	comp->stream = alloc_percpu(struct zcomp_strm *);
+	comp->stream = alloc_percpu(struct zcomp_strm);
 	if (!comp->stream)
 		return -ENOMEM;
 
