@@ -15,6 +15,7 @@
 #ifndef _ZRAM_DRV_H_
 #define _ZRAM_DRV_H_
 
+#include <linux/rbtree.h>
 #include <linux/rwsem.h>
 #include <linux/zsmalloc.h>
 
@@ -57,6 +58,14 @@ enum zram_pageflags {
 	ZRAM_COMP_PRIORITY_BIT2, /* Second bit of comp priority index */
 
 	__NR_ZRAM_PAGEFLAGS,
+};
+
+struct zram_entry {
+	struct rb_node rb_node;
+	u32 len;
+	u32 checksum;
+	unsigned long refcount;
+	unsigned long handle;
 };
 
 /*
@@ -144,7 +153,6 @@ struct zram {
 	bool use_dedup;
 	struct file *backing_dev;
 #ifdef CONFIG_ZRAM_WRITEBACK
-	struct file *backing_dev;
 	spinlock_t wb_limit_lock;
 	bool wb_limit_enable;
 	u64 bd_wb_limit;
