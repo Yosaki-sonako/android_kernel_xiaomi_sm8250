@@ -25,7 +25,6 @@
 #include "qdf_types.h"
 
 #include "wlan_hdd_misc.h"
-#include "wlan_cfg_ini.h"
 
 static char *wlan_cfg_buf;
 
@@ -149,7 +148,8 @@ free_fbuf:
 qdf_export_symbol(qdf_ini_parse);
 
 static int __init wlan_copy_ini_buf(void)
-{	
+{
+	#include "wlan_cfg_ini.h"
 
 	wlan_cfg_buf = kmalloc(sizeof(wlan_cfg), GFP_KERNEL);
 	memcpy(wlan_cfg_buf, wlan_cfg, sizeof(wlan_cfg));
