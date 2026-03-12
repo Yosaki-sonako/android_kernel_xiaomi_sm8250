@@ -107,16 +107,6 @@ struct scan_control {
 	/* One of the zones is ready for compaction */
 	unsigned int compaction_ready:1;
 
-<<<<<<< HEAD
-	/* The anonymous pages on the current node are below vm.anon_min_kbytes */
-	unsigned int anon_below_min:1;
-
-	/* The clean file pages on the current node are below vm.clean_low_kbytes */
-	unsigned int clean_below_low:1;
-
-	/* The clean file pages on the current node are below vm.clean_min_kbytes */
-	unsigned int clean_below_min:1;
-
 #ifdef CONFIG_LRU_GEN
 	/* help make better choices when multiple memcgs are available */
 	unsigned int memcgs_need_aging:1;
