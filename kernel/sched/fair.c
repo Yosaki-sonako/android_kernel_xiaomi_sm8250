@@ -552,112 +552,15 @@ static inline u64 min_vruntime(u64 min_vruntime, u64 vruntime)
 	return min_vruntime;
 }
 
-static inline bool entity_before(struct sched_entity *a,
+static inline int entity_before(struct sched_entity *a,
 				struct sched_entity *b)
 {
 	return (s64)(a->vruntime - b->vruntime) < 0;
 }
 
-static inline s64 entity_key(struct cfs_rq *cfs_rq, struct sched_entity *se)
-{
-	return (s64)(se->vruntime - cfs_rq->min_vruntime);
-}
 
-#define __node_2_se(node) \
-	rb_entry((node), struct sched_entity, run_node)
+static void update_min_vruntime(struct cfs_rq *cfs_rq)
 
-/*
- * Compute virtual time from the per-task service numbers:
- *
- * Fair schedulers conserve lag:
- *
- *   \Sum lag_i = 0
- *
- * Where lag_i is given by:
- *
- *   lag_i = S - s_i = w_i * (V - v_i)
- *
- * Where S is the ideal service time and V is it's virtual time counterpart.
- * Therefore:
- *
- *   \Sum lag_i = 0
- *   \Sum w_i * (V - v_i) = 0
- *   \Sum w_i * V - w_i * v_i = 0
- *
- * From which we can solve an expression for V in v_i (which we have in
- * se->vruntime):
- *
- *       \Sum v_i * w_i   \Sum v_i * w_i
- *   V = -------------- = --------------
- *          \Sum w_i            W
- *
- * Specifically, this is the weighted average of all entity virtual runtimes.
- *
- * [[ NOTE: this is only equal to the ideal scheduler under the condition
- *          that join/leave operations happen at lag_i = 0, otherwise the
- *          virtual time has non-continguous motion equivalent to:
- *
- *	      V +-= lag_i / W
- *
- *	    Also see the comment in place_entity() that deals with this. ]]
- *
- * However, since v_i is u64, and the multiplcation could easily overflow
- * transform it into a relative form that uses smaller quantities:
- *
- * Substitute: v_i == (v_i - v0) + v0
- *
- *     \Sum ((v_i - v0) + v0) * w_i   \Sum (v_i - v0) * w_i
- * V = ---------------------------- = --------------------- + v0
- *                  W                            W
- *
- * Which we track using:
- *
- *                    v0 := cfs_rq->min_vruntime
- * \Sum (v_i - v0) * w_i := cfs_rq->avg_vruntime
- *              \Sum w_i := cfs_rq->avg_load
- *
- * Since min_vruntime is a monotonic increasing variable that closely tracks
- * the per-task service, these deltas: (v_i - v), will be in the order of the
- * maximal (virtual) lag induced in the system due to quantisation.
- *
- * Also, we use scale_load_down() to reduce the size.
- *
- * As measured, the max (key * weight) value was ~44 bits for a kernel build.
- */
-static void
-avg_vruntime_add(struct cfs_rq *cfs_rq, struct sched_entity *se)
-{
-	unsigned long weight = scale_load_down(se->load.weight);
-	s64 key = entity_key(cfs_rq, se);
-
-	cfs_rq->avg_vruntime += key * weight;
-	cfs_rq->avg_load += weight;
-}
-
-static void
-avg_vruntime_sub(struct cfs_rq *cfs_rq, struct sched_entity *se)
-{
-	unsigned long weight = scale_load_down(se->load.weight);
-	s64 key = entity_key(cfs_rq, se);
-
-	cfs_rq->avg_vruntime -= key * weight;
-	cfs_rq->avg_load -= weight;
-}
-
-static inline
-void avg_vruntime_update(struct cfs_rq *cfs_rq, s64 delta)
-{
-	/*
-	 * v' = v + d ==> avg_vruntime' = avg_runtime - d*avg_load
-	 */
-	cfs_rq->avg_vruntime -= cfs_rq->avg_load * delta;
-}
-
-/*
- * Specifically: avg_runtime() + 0 must result in entity_eligible() := true
- * For this to be so, the result of this function must have a left bias.
- */
-u64 avg_vruntime(struct cfs_rq *cfs_rq)
 {
 	struct sched_entity *curr = cfs_rq->curr;
 	s64 avg = cfs_rq->avg_vruntime;
@@ -768,7 +671,12 @@ static void update_min_vruntime(struct cfs_rq *cfs_rq)
 			curr = NULL;
 	}
 
-	if (se) {
+
+	if (leftmost) { /* non-empty tree */
+		struct sched_entity *se;
+		se = rb_entry(leftmost, struct sched_entity, run_node);
+
+
 		if (!curr)
 			vruntime = se->vruntime;
 		else
@@ -780,49 +688,40 @@ static void update_min_vruntime(struct cfs_rq *cfs_rq)
 		      __update_min_vruntime(cfs_rq, vruntime));
 }
 
-static inline bool __entity_less(struct rb_node *a, const struct rb_node *b)
-{
-	return entity_before(__node_2_se(a), __node_2_se(b));
-}
-
-#define deadline_gt(field, lse, rse) ({ (s64)((lse)->field - (rse)->field) > 0; })
-
-static inline void __update_min_deadline(struct sched_entity *se, struct rb_node *node)
-{
-	if (node) {
-		struct sched_entity *rse = __node_2_se(node);
-		if (deadline_gt(min_deadline, se, rse))
-			se->min_deadline = rse->min_deadline;
-	}
-}
-
-/*
- * se->min_deadline = min(se->deadline, left->min_deadline, right->min_deadline)
- */
-static inline bool min_deadline_update(struct sched_entity *se, bool exit)
-{
-	u64 old_min_deadline = se->min_deadline;
-	struct rb_node *node = &se->run_node;
-
-	se->min_deadline = se->deadline;
-	__update_min_deadline(se, node->rb_right);
-	__update_min_deadline(se, node->rb_left);
-
-	return se->min_deadline == old_min_deadline;
-}
-
-RB_DECLARE_CALLBACKS(static, min_deadline_cb, struct sched_entity,
-		     run_node, min_deadline, min_deadline_update);
 
 /*
  * Enqueue an entity into the rb-tree:
  */
 static void __enqueue_entity(struct cfs_rq *cfs_rq, struct sched_entity *se)
 {
-	avg_vruntime_add(cfs_rq, se);
-	se->min_deadline = se->deadline;
-	rb_add_augmented_cached(&se->run_node, &cfs_rq->tasks_timeline,
-				__entity_less, &min_deadline_cb);
+
+	struct rb_node **link = &cfs_rq->tasks_timeline.rb_root.rb_node;
+	struct rb_node *parent = NULL;
+	struct sched_entity *entry;
+	bool leftmost = true;
+
+	/*
+	 * Find the right place in the rbtree:
+	 */
+	while (*link) {
+		parent = *link;
+		entry = rb_entry(parent, struct sched_entity, run_node);
+		/*
+		 * We dont care about collisions. Nodes with
+		 * the same key stay together.
+		 */
+		if (entity_before(se, entry)) {
+			link = &parent->rb_left;
+		} else {
+			link = &parent->rb_right;
+			leftmost = false;
+		}
+	}
+
+	rb_link_node(&se->run_node, parent, link);
+	rb_insert_color_cached(&se->run_node,
+			       &cfs_rq->tasks_timeline, leftmost);
+
 }
 
 static void __dequeue_entity(struct cfs_rq *cfs_rq, struct sched_entity *se)
@@ -839,7 +738,7 @@ struct sched_entity *__pick_first_entity(struct cfs_rq *cfs_rq)
 	if (!left)
 		return NULL;
 
-	return __node_2_se(left);
+	return rb_entry(left, struct sched_entity, run_node);
 }
 
 /*
@@ -872,102 +771,8 @@ static struct sched_entity *__pick_eevdf(struct cfs_rq *cfs_rq)
 		curr = NULL;
 	best = curr;
 
-	/*
-	 * Once selected, run a task until it either becomes non-eligible or
-	 * until it gets a new slice. See the HACK in set_next_entity().
-	 */
-	if (sched_feat(RUN_TO_PARITY) && curr && curr->vlag == curr->deadline)
-		return curr;
+	return rb_entry(next, struct sched_entity, run_node);
 
-	while (node) {
-		struct sched_entity *se = __node_2_se(node);
-
-		/*
-		 * If this entity is not eligible, try the left subtree.
-		 */
-		if (!entity_eligible(cfs_rq, se)) {
-			node = node->rb_left;
-			continue;
-		}
-
-		/*
-		 * Now we heap search eligible trees for the best (min_)deadline
-		 */
-		if (!best || deadline_gt(deadline, best, se))
-			best = se;
-
-		/*
-		 * Every se in a left branch is eligible, keep track of the
-		 * branch with the best min_deadline
-		 */
-		if (node->rb_left) {
-			struct sched_entity *left = __node_2_se(node->rb_left);
-
-			if (!best_left || deadline_gt(min_deadline, best_left, left))
-				best_left = left;
-
-			/*
-			 * min_deadline is in the left branch. rb_left and all
-			 * descendants are eligible, so immediately switch to the second
-			 * loop.
-			 */
-			if (left->min_deadline == se->min_deadline)
-				break;
-		}
-
-		/* min_deadline is at this node, no need to look right */
-		if (se->deadline == se->min_deadline)
-			break;
-
-		/* else min_deadline is in the right branch. */
-		node = node->rb_right;
-	}
-
-	/*
-	 * We ran into an eligible node which is itself the best.
-	 * (Or nr_running == 0 and both are NULL)
-	 */
-	if (!best_left || (s64)(best_left->min_deadline - best->deadline) > 0)
-		return best;
-
-	/*
-	 * Now best_left and all of its children are eligible, and we are just
-	 * looking for deadline == min_deadline
-	 */
-	node = &best_left->run_node;
-	while (node) {
-		struct sched_entity *se = __node_2_se(node);
-
-		/* min_deadline is the current node */
-		if (se->deadline == se->min_deadline)
-			return se;
-
-		/* min_deadline is in the left branch */
-		if (node->rb_left &&
-		    __node_2_se(node->rb_left)->min_deadline == se->min_deadline) {
-			node = node->rb_left;
-			continue;
-		}
-
-		/* else min_deadline is in the right branch */
-		node = node->rb_right;
-	}
-	return NULL;
-}
-
-static struct sched_entity *pick_eevdf(struct cfs_rq *cfs_rq)
-{
-	struct sched_entity *se = __pick_eevdf(cfs_rq);
-
-	if (!se) {
-		struct sched_entity *left = __pick_first_entity(cfs_rq);
-		if (left) {
-			pr_err("EEVDF scheduling fail, picking leftmost\n");
-			return left;
-		}
-	}
-
-	return se;
 }
 
 #ifdef CONFIG_SCHED_DEBUG
@@ -978,7 +783,7 @@ struct sched_entity *__pick_last_entity(struct cfs_rq *cfs_rq)
 	if (!last)
 		return NULL;
 
-	return __node_2_se(last);
+	return rb_entry(last, struct sched_entity, run_node);
 }
 
 /**************************************************************
