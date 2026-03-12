@@ -456,10 +456,7 @@ static unsigned long sugov_get_util(struct sugov_cpu *sg_cpu)
 static unsigned long sugov_get_util(struct sugov_cpu *sg_cpu)
 {
 	struct rq *rq = cpu_rq(sg_cpu->cpu);
-<<<<<<< HEAD
 
-=======
->>>>>>> 11c94c55fe76 (sched: checkout to redbull)
 	unsigned long util_cfs = cpu_util_cfs(rq);
 	unsigned long max = arch_scale_cpu_capacity(NULL, sg_cpu->cpu);
 
@@ -1167,7 +1164,7 @@ static struct sugov_tunables *sugov_tunables_alloc(struct sugov_policy *sg_polic
 	return tunables;
 }
 
-<<<<<<< HEAD
+
 static void sugov_tunables_save(struct cpufreq_policy *policy,
 		struct sugov_tunables *tunables)
 {
@@ -1194,8 +1191,7 @@ static void sugov_tunables_save(struct cpufreq_policy *policy,
 	cached->down_rate_limit_us = tunables->down_rate_limit_us;
 }
 
-=======
->>>>>>> 11c94c55fe76 (sched: checkout to redbull)
+
 static void sugov_clear_global_tunables(void)
 {
 	if (!have_governor_per_policy())

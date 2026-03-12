@@ -146,11 +146,9 @@ static int sched_effective_boost(void)
 static void sched_boost_disable(int type)
 {
 	struct sched_boost_data *sb = &sched_boosts[type];
-<<<<<<< HEAD
-	int next_boost, prev_boost = sched_boost_type;
-=======
+
 	int next_boost;
->>>>>>> 11c94c55fe76 (sched: checkout to redbull)
+
 
 	if (sb->refcount <= 0)
 		return;
