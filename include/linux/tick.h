@@ -103,12 +103,10 @@ enum tick_dep_bits {
 	TICK_DEP_BIT_PERF_EVENTS	= 1,
 	TICK_DEP_BIT_SCHED		= 2,
 	TICK_DEP_BIT_CLOCK_UNSTABLE	= 3,
-<<<<<<< HEAD
-	TICK_DEP_BIT_RCU		= 4
-=======
+
 	TICK_DEP_BIT_RCU		= 4,
 	TICK_DEP_BIT_RCU_EXP		= 5
->>>>>>> e9c07d4695ae (rcu: Enable tick for nohz_full CPUs slow to provide expedited QS)
+
 };
 #define TICK_DEP_BIT_MAX TICK_DEP_BIT_RCU_EXP
 
