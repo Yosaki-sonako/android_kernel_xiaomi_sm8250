@@ -10608,24 +10608,7 @@ static struct rq *find_busiest_queue(struct lb_env *env,
 
 static int need_active_balance(struct lb_env *env)
 {
-<<<<<<< HEAD
-	struct sched_domain *sd = env->sd;
 
-	if (env->idle == CPU_NEWLY_IDLE) {
-
-		/*
-		 * ASYM_PACKING needs to force migrate tasks from busy but
-		 * lower priority CPUs in order to pack all tasks in the
-		 * highest priority CPUs.
-		 */
-		if ((sd->flags & SD_ASYM_PACKING) &&
-		    sched_asym_prefer(env->dst_cpu, env->src_cpu))
-			return 1;
-	}
-
-	if (env->idle != CPU_NOT_IDLE &&
-			env->src_grp_type == group_misfit_task)
-=======
 	if (asym_active_balance(env))
 		return 1;
 
@@ -10633,7 +10616,7 @@ static int need_active_balance(struct lb_env *env)
 		return 1;
 
 	if (env->migration_type == migrate_misfit)
->>>>>>> bd31eadb5ad9 (sched/fair: Don't needlessly migrate a lone task to a higher capacity CPU)
+
 		return 1;
 
 	if ((env->idle != CPU_NOT_IDLE) &&
