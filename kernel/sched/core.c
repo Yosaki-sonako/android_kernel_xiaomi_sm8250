@@ -1460,11 +1460,6 @@ bool uclamp_latency_sensitive(struct task_struct *p)
 }
 #endif /* CONFIG_SMP */
 
-static void uclamp_post_fork(struct task_struct *p)
-{
-	__uclamp_sync_util_min_rt_default(p);
-}
-
 static void __init init_uclamp_rq(struct rq *rq)
 {
 	enum uclamp_id clamp_id;
