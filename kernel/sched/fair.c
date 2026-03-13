@@ -10610,13 +10610,22 @@ static struct rq *find_busiest_queue(struct lb_env *env,
 static int need_active_balance(struct lb_env *env)
 {
 
-	if (asym_active_balance(env))
-		return 1;
+	struct sched_domain *sd = env->sd;
 
-	if (imbalanced_active_balance(env))
-		return 1;
+	if (env->idle == CPU_NEWLY_IDLE) {
 
-	if (env->migration_type == migrate_misfit)
+		/*
+		 * ASYM_PACKING needs to force migrate tasks from busy but
+		 * lower priority CPUs in order to pack all tasks in the
+		 * highest priority CPUs.
+		 */
+		if ((sd->flags & SD_ASYM_PACKING) &&
+		    sched_asym_prefer(env->dst_cpu, env->src_cpu))
+			return 1;
+	}
+
+	if (env->idle != CPU_NOT_IDLE &&
+			env->src_grp_type == group_misfit_task)
 
 		return 1;
 
@@ -11515,6 +11524,19 @@ static void nohz_balancer_kick(struct rq *rq)
 	}
 
 	rcu_read_lock();
+	sds = rcu_dereference(per_cpu(sd_llc_shared, cpu));
+	if (sds) {
+		/*
+		 * XXX: write a coherent comment on why we do this.
+		 * See also: http://lkml.kernel.org/r/20111202010832.602203411@sbsiddha-desk.sc.intel.com
+		 */
+		nr_busy = atomic_read(&sds->nr_busy_cpus);
+		if (nr_busy > 1) {
+			flags = NOHZ_KICK_MASK;
+			goto unlock;
+		}
+
+	}
 
 	sd = rcu_dereference(per_cpu(sd_asym_packing, cpu));
 	if (sd) {
