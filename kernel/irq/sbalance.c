@@ -58,15 +58,9 @@ struct bal_irq {
 
 struct bal_domain {
 	struct list_head movable_irqs;
-<<<<<<< HEAD
-
-	unsigned long old_total;
-
-	unsigned int intrs;
-=======
 	unsigned long intrs;
 	unsigned long old_total;
->>>>>>> d088aea17612 (sbalance: Fix systemic issues caused by flawed IRQ statistics)
+
 	int cpu;
 };
 
