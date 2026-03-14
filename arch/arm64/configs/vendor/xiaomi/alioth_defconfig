@@ -488,6 +488,7 @@ CONFIG_ARM64_PAN=y
 CONFIG_ARM64_LSE_ATOMICS=y
 CONFIG_ARM64_USE_LSE_ATOMICS=y
 # CONFIG_ARM64_VHE is not set
+# CONFIG_ARM64_SVE is not set
 
 #
 # ARMv8.2 architectural features
