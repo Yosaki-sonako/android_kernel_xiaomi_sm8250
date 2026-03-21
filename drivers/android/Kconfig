@@ -119,11 +119,6 @@ config ANDROID_SIMPLE_LMK_TIMEOUT_MSEC
 	  needed. After the specified timeout elapses, Simple LMK will stop
 	  waiting and make itself available to kill more processes.
 
-endif
-
-endif # if ANDROID
-
-
 config ANDROID_KABI_RESERVE
 	bool "Android KABI reserve padding"
 	default n
