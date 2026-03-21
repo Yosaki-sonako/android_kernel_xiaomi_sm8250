@@ -1673,20 +1673,14 @@ static void cfq_pd_offline(struct blkg_policy_data *pd)
 	int i;
 
 	for (i = 0; i < IOPRIO_BE_NR; i++) {
-		if (cfqg->async_cfqq[0][i]) {
+		if (cfqg->async_cfqq[0][i])
 			cfq_put_queue(cfqg->async_cfqq[0][i]);
-			cfqg->async_cfqq[0][i] = NULL;
-		}
-		if (cfqg->async_cfqq[1][i]) {
+		if (cfqg->async_cfqq[1][i])
 			cfq_put_queue(cfqg->async_cfqq[1][i]);
-			cfqg->async_cfqq[1][i] = NULL;
-		}
 	}
 
-	if (cfqg->async_idle_cfqq) {
+	if (cfqg->async_idle_cfqq)
 		cfq_put_queue(cfqg->async_idle_cfqq);
-		cfqg->async_idle_cfqq = NULL;
-	}
 
 	/*
 	 * @blkg is going offline and will be ignored by
@@ -4734,7 +4728,6 @@ static int cfq_init_queue(struct request_queue *q, struct elevator_type *e)
 	cfqd->cfq_target_latency = cfq_target_latency;
 	cfqd->cfq_slice_async_rq = cfq_slice_async_rq;
 	cfqd->cfq_slice_idle = cfq_slice_idle;
-	cfqd->cfq_max_async_dispatch = cfq_max_async_dispatch;
 	cfqd->cfq_group_idle = cfq_group_idle;
 	cfqd->cfq_latency = 1;
 	cfqd->hw_tag = -1;
