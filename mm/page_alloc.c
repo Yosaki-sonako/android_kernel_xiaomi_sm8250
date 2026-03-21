@@ -4877,8 +4877,6 @@ got_pg:
 	atomic_dec(&pgdat->kswapd_waiters);
 	if (used_vmpressure)
 		vmpressure_dec_users();
-		atomic_dec(&pgdat->kswapd_waiters);
-
 	if (!page)
 		warn_alloc(gfp_mask, ac->nodemask,
 				"page allocation failure: order:%u", order);
